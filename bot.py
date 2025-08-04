@@ -23,25 +23,20 @@ def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     catalog_btn = KeyboardButton(
         "📦 Каталог",
-        web_app=WebAppInfo(url="https://ekran-tj-production.up.railway.app")
+        web_app=WebAppInfo(url="https://ekran-tj-production.up.railway.app/catalog.html")
     )
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
 
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
-    try:
-        print("Получены данные из WebApp:", message.web_app_data.data)
-        user = message.from_user
-        user_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-        if not user_name:
-            user_name = "Клиент"
-        msg = f"Новый заказ от: {user_name}\n\n{message.web_app_data.data}"
-
-        bot.send_message(ADMIN_CHAT_ID, msg)
-        bot.send_message(message.chat.id, "Ваш заказ получен! Спасибо.")
-    except Exception as e:
-        print("Ошибка при отправке сообщения:", e)
+    order_text = message.web_app_data.data
+    user = message.from_user
+    user_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
+    if not user_name:
+        user_name = "Клиент"
+    msg = f"Новый заказ от: {user_name}\n\n{order_text}"
+    bot.send_message(ADMIN_CHAT_ID, msg)
 
 def run_bot():
     bot.infinity_polling()
