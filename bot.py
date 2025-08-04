@@ -4,8 +4,8 @@ from flask import Flask, send_from_directory
 from threading import Thread
 import os
 
-TOKEN = 'ваш_токен'
-ADMIN_CHAT_ID = ваш_telegram_id
+TOKEN = '7861896848:AAHJk1QcelFZ1owB0LO4XXNFflBz-WDZBIE'
+ADMIN_CHAT_ID = 6172156061
 
 bot = telebot.TeleBot(TOKEN)  # <-- ОБЪЕКТ ДОЛЖЕН БЫТЬ ЗДЕСЬ
 
