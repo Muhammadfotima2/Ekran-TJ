@@ -40,7 +40,7 @@ def get_products():
 
 @app.route('/orders', methods=['GET'])
 def get_orders():
-    # Пока возвращаем пустой список, т.к. мы не пишем в файл
+    # Пока возвращаем заказы из памяти
     return jsonify(memory_orders)
 
 @app.route('/orders', methods=['POST'])
@@ -76,6 +76,7 @@ def start_handler(message):
 
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
+    print("Получены данные из WebApp:", message.web_app_data.data)  # Логирование
     order_text = message.web_app_data.data
     user = message.from_user
     user_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Клиент"
