@@ -14,6 +14,8 @@ app = Flask(__name__, static_folder='public')
 PRODUCTS_FILE = 'products.json'
 ORDERS_FILE = 'orders.json'
 
+memory_orders = []  # Временное хранение заказов в памяти для теста
+
 def read_json(file):
     with open(file, 'r', encoding='utf-8') as f:
         return json.load(f)
@@ -38,21 +40,19 @@ def get_products():
 
 @app.route('/orders', methods=['GET'])
 def get_orders():
-    orders = read_json(ORDERS_FILE)
-    return jsonify(orders)
+    # Пока возвращаем пустой список, т.к. мы не пишем в файл
+    return jsonify(memory_orders)
 
 @app.route('/orders', methods=['POST'])
 def add_order():
     order_data = request.json
-    orders = read_json(ORDERS_FILE)
-    orders.append(order_data)
-    write_json(ORDERS_FILE, orders)
+    memory_orders.append(order_data)
     return jsonify({"status": "ok", "message": "Order added"}), 201
 
 @app.route('/admin/orders', methods=['GET'])
 def admin_orders():
-    orders = read_json(ORDERS_FILE)
-    html = '<h2>Список заказов</h2>'
+    orders = memory_orders  # Используем память для теста
+    html = '<h2>Список заказов (тест, в памяти)</h2>'
     if not orders:
         html += '<p>Заказов пока нет.</p>'
     else:
@@ -82,16 +82,12 @@ def handle_web_app_data(message):
     msg = f"Новый заказ от: {user_name}\n\n{order_text}"
     bot.send_message(ADMIN_CHAT_ID, msg)
 
-    # Сохраняем заказ в файл напрямую
-    try:
-        orders = read_json(ORDERS_FILE)
-        orders.append({
-            "user": user_name,
-            "order": order_text
-        })
-        write_json(ORDERS_FILE, orders)
-    except Exception as e:
-        print(f"Ошибка при сохранении заказа в файл: {e}")
+    # Добавляем заказ в память
+    memory_orders.append({
+        "user": user_name,
+        "order": order_text
+    })
+    print("Заказ добавлен в память.")
 
 def run_bot():
     bot.infinity_polling()
