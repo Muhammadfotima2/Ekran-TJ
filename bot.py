@@ -49,6 +49,21 @@ def add_order():
     write_json(ORDERS_FILE, orders)
     return jsonify({"status": "ok", "message": "Order added"}), 201
 
+# Новый маршрут — страница для просмотра заказов в браузере
+@app.route('/admin/orders', methods=['GET'])
+def admin_orders():
+    orders = read_json(ORDERS_FILE)
+    html = '<h2>Список заказов</h2>'
+    if not orders:
+        html += '<p>Заказов пока нет.</p>'
+    else:
+        for i, order in enumerate(orders, 1):
+            html += f'<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">'
+            html += f'<strong>Заказ #{i}</strong><br>'
+            html += f'<pre>{json.dumps(order, ensure_ascii=False, indent=2)}</pre>'
+            html += '</div>'
+    return html
+
 # Telegram-бот
 @bot.message_handler(commands=['start'])
 def start_handler(message):
