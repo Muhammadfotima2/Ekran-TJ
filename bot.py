@@ -1,7 +1,8 @@
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
-from flask import Flask, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
 from threading import Thread
+import json
 import os
 
 TOKEN = '7861896848:AAHJk1QcelFZ1owB0LO4XXNFflBz-WDZBIE'
@@ -10,6 +11,18 @@ ADMIN_CHAT_ID = 6172156061
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
 
+PRODUCTS_FILE = 'products.json'
+ORDERS_FILE = 'orders.json'
+
+def read_json(file):
+    with open(file, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def write_json(file, data):
+    with open(file, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+# Flask маршруты
 @app.route('/')
 def index():
     return send_from_directory('public', 'catalog.html')
@@ -18,6 +31,25 @@ def index():
 def static_files(path):
     return send_from_directory('public', path)
 
+@app.route('/products', methods=['GET'])
+def get_products():
+    products = read_json(PRODUCTS_FILE)
+    return jsonify(products)
+
+@app.route('/orders', methods=['GET'])
+def get_orders():
+    orders = read_json(ORDERS_FILE)
+    return jsonify(orders)
+
+@app.route('/orders', methods=['POST'])
+def add_order():
+    order_data = request.json
+    orders = read_json(ORDERS_FILE)
+    orders.append(order_data)
+    write_json(ORDERS_FILE, orders)
+    return jsonify({"status": "ok", "message": "Order added"}), 201
+
+# Telegram-бот
 @bot.message_handler(commands=['start'])
 def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -32,11 +64,21 @@ def start_handler(message):
 def handle_web_app_data(message):
     order_text = message.web_app_data.data
     user = message.from_user
-    user_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-    if not user_name:
-        user_name = "Клиент"
+    user_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Клиент"
     msg = f"Новый заказ от: {user_name}\n\n{order_text}"
     bot.send_message(ADMIN_CHAT_ID, msg)
+
+    # Попытка сохранить заказ в orders.json через API
+    try:
+        import requests
+        order_json = {
+            "user": user_name,
+            "order": order_text
+        }
+        url = f"https://ekran-tj-production.up.railway.app/orders"
+        requests.post(url, json=order_json)
+    except Exception as e:
+        print(f"Ошибка при сохранении заказа: {e}")
 
 def run_bot():
     bot.infinity_polling()
