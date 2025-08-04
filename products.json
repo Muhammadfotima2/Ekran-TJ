@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "model": "Samsung A10",
+    "quality": "Original",
+    "brand": "KBS",
+    "price": 90
+  },
+  {
+    "id": 2,
+    "model": "Samsung A12",
+    "quality": "Service",
+    "brand": "Service Pack",
+    "price": 80
+  }
+]
