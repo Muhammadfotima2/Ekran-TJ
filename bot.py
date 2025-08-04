@@ -49,7 +49,6 @@ def add_order():
     write_json(ORDERS_FILE, orders)
     return jsonify({"status": "ok", "message": "Order added"}), 201
 
-# Новый маршрут — страница для просмотра заказов в браузере
 @app.route('/admin/orders', methods=['GET'])
 def admin_orders():
     orders = read_json(ORDERS_FILE)
@@ -83,17 +82,16 @@ def handle_web_app_data(message):
     msg = f"Новый заказ от: {user_name}\n\n{order_text}"
     bot.send_message(ADMIN_CHAT_ID, msg)
 
-    # Попытка сохранить заказ в orders.json через API
+    # Сохраняем заказ в файл напрямую
     try:
-        import requests
-        order_json = {
+        orders = read_json(ORDERS_FILE)
+        orders.append({
             "user": user_name,
             "order": order_text
-        }
-        url = f"https://ekran-tj-production.up.railway.app/orders"
-        requests.post(url, json=order_json)
+        })
+        write_json(ORDERS_FILE, orders)
     except Exception as e:
-        print(f"Ошибка при сохранении заказа: {e}")
+        print(f"Ошибка при сохранении заказа в файл: {e}")
 
 def run_bot():
     bot.infinity_polling()
