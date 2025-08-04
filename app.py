@@ -26,4 +26,5 @@ def get_orders():
     return jsonify(orders)
 
 if __name__ == '__main__':
+    print("Запуск Flask API...")
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
