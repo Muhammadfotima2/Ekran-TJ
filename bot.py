@@ -7,18 +7,23 @@ import os
 TOKEN = '7861896848:AAHJk1QcelFZ1owB0LO4XXNFflBz-WDZBIE'
 ADMIN_CHAT_ID = 6172156061
 
-bot = telebot.TeleBot(TOKEN)  # <-- ОБЪЕКТ ДОЛЖЕН БЫТЬ ЗДЕСЬ
-
+bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
 
-# Обработчики идут после создания bot
+@app.route('/')
+def index():
+    return send_from_directory('public', 'catalog.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('public', path)
 
 @bot.message_handler(commands=['start'])
 def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     catalog_btn = KeyboardButton(
         "📦 Каталог",
-        web_app=WebAppInfo(url="https://your-webapp-url")
+        web_app=WebAppInfo(url="https://ekran-tj-production.up.railway.app")
     )
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
@@ -33,7 +38,7 @@ def handle_web_app_data(message):
             user_name = "Клиент"
         msg = f"Новый заказ от: {user_name}\n\n{order_text}"
 
-        print(f"Получен заказ: {msg}")  # Лог в консоль
+        print(f"Получен заказ: {msg}")
 
         bot.send_message(ADMIN_CHAT_ID, msg)
     except Exception as e:
