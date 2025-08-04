@@ -1,4 +1,5 @@
 import telebot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from flask import Flask, send_from_directory
 from threading import Thread
 import os
@@ -7,21 +8,25 @@ TOKEN = '7861896848:AAHJk1QcelFZ1owB0LO4XXNFflBz-WDZBIE'
 ADMIN_CHAT_ID = 6172156061
 
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__, static_folder='public')  # Папка с каталогом
+app = Flask(__name__, static_folder='public')
 
-# Отдаём каталог по URL /
 @app.route('/')
 def index():
     return send_from_directory('public', 'catalog.html')
 
-# Отдаём статические файлы (картинки, js, css)
 @app.route('/<path:path>')
 def static_files(path):
     return send_from_directory('public', path)
 
 @bot.message_handler(commands=['start'])
 def start_handler(message):
-    bot.send_message(message.chat.id, "Добро пожаловать! Здесь будет каталог.")
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    catalog_btn = KeyboardButton(
+        "📦 Каталог",
+        web_app=WebAppInfo(url="https://ekran-tj-production.up.railway.app")
+    )
+    markup.add(catalog_btn)
+    bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
 
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
