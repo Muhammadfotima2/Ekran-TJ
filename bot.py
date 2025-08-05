@@ -14,11 +14,12 @@ app = Flask(__name__, static_folder='public')
 PRODUCTS_FILE = 'products.json'
 ORDERS_FILE = 'orders.json'
 
-memory_orders = []  # Временное хранение заказов в памяти для теста
-
 def read_json(file):
-    with open(file, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        with open(file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
 
 def write_json(file, data):
     with open(file, 'w', encoding='utf-8') as f:
@@ -40,19 +41,21 @@ def get_products():
 
 @app.route('/orders', methods=['GET'])
 def get_orders():
-    # Пока возвращаем заказы из памяти
-    return jsonify(memory_orders)
+    orders = read_json(ORDERS_FILE)
+    return jsonify(orders)
 
 @app.route('/orders', methods=['POST'])
 def add_order():
     order_data = request.json
-    memory_orders.append(order_data)
+    orders = read_json(ORDERS_FILE)
+    orders.append(order_data)
+    write_json(ORDERS_FILE, orders)
     return jsonify({"status": "ok", "message": "Order added"}), 201
 
 @app.route('/admin/orders', methods=['GET'])
 def admin_orders():
-    orders = memory_orders  # Используем память для теста
-    html = '<h2>Список заказов (тест, в памяти)</h2>'
+    orders = read_json(ORDERS_FILE)
+    html = '<h2>Список заказов</h2>'
     if not orders:
         html += '<p>Заказов пока нет.</p>'
     else:
@@ -69,7 +72,7 @@ def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     catalog_btn = KeyboardButton(
         "📦 Каталог",
-        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
+        web_app=WebAppInfo(url="https://ekran-tj-production.up.railway.app/catalog.html")
     )
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
@@ -83,12 +86,19 @@ def handle_web_app_data(message):
     msg = f"Новый заказ от: {user_name}\n\n{order_text}"
     bot.send_message(ADMIN_CHAT_ID, msg)
 
-    # Добавляем заказ в память
-    memory_orders.append({
+    try:
+        orders = read_json(ORDERS_FILE)
+    except Exception:
+        orders = []
+    orders.append({
         "user": user_name,
         "order": order_text
     })
-    print("Заказ добавлен в память.")
+    try:
+        write_json(ORDERS_FILE, orders)
+        print("Заказ успешно сохранён в файл.")
+    except Exception as e:
+        print(f"Ошибка при сохранении заказа в файл: {e}")
 
 def run_bot():
     bot.infinity_polling()
