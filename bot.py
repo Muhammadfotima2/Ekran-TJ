@@ -22,6 +22,12 @@ def write_orders(orders):
     with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(orders, f, indent=2, ensure_ascii=False)
 
+# ✅ Отдача изображений напрямую (решение твоей проблемы)
+@app.route('/image/<path:filename>')
+def image(filename):
+    return send_from_directory('public/image', filename)
+
+# Webhook для Telegram
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
     json_string = request.get_data().decode('utf-8')
