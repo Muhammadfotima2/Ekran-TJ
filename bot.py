@@ -1,10 +1,11 @@
 import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from flask import Flask, request
 import os
 
-TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой токен
-ADMIN_CHAT_ID = 6172156061  # Твой Telegram ID
-WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'  # Твой домен + токен (вебхук URL)
+TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Ваш токен бота
+ADMIN_CHAT_ID = 6172156061
+WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -22,10 +23,10 @@ def index():
 
 @bot.message_handler(commands=['start'])
 def start_handler(message):
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    catalog_btn = telebot.types.KeyboardButton(
+    markup = InlineKeyboardMarkup()
+    catalog_btn = InlineKeyboardButton(
         "📦 Каталог",
-        web_app=telebot.types.WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
+        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
     )
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
