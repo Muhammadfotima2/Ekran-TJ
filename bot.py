@@ -22,12 +22,6 @@ def write_orders(orders):
     with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
         json.dump(orders, f, indent=2, ensure_ascii=False)
 
-# ✅ Отдача изображений напрямую (решение твоей проблемы)
-@app.route('/image/<path:filename>')
-def image(filename):
-    return send_from_directory('public/image', filename)
-
-# Webhook для Telegram
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
     json_string = request.get_data().decode('utf-8')
@@ -42,6 +36,18 @@ def index():
 @app.route('/catalog.html')
 def catalog():
     return send_from_directory('public', 'catalog.html')
+
+@app.route('/orders.html')
+def orders_page():
+    return send_from_directory('public', 'orders.html')
+
+@app.route('/orders.json')
+def orders_json():
+    return send_from_directory('public', 'orders.json')
+
+@app.route('/image/<path:filename>')
+def images(filename):
+    return send_from_directory('public/image', filename)
 
 @app.route('/admin/orders')
 def admin_orders():
@@ -60,12 +66,18 @@ def admin_orders():
 @bot.message_handler(commands=['start'])
 def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
+
     catalog_btn = KeyboardButton(
         "📦 Каталог",
         web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
     )
-    markup.add(catalog_btn)
-    bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
+    orders_btn = KeyboardButton(
+        "🧾 Заказы",
+        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/orders.html")
+    )
+
+    markup.add(catalog_btn, orders_btn)
+    bot.send_message(message.chat.id, "Добро пожаловать! Выберите действие:", reply_markup=markup)
 
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
