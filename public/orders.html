@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Список заказов</title>
   <style>
     body {
@@ -20,6 +20,7 @@
       padding: 15px;
       margin-bottom: 20px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      position: relative;
     }
     .order h3 {
       margin-top: 0;
@@ -40,30 +41,52 @@
       margin-top: 10px;
       font-weight: bold;
     }
+    .delete-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .delete-btn:hover {
+      background: #c0392b;
+    }
   </style>
 </head>
 <body>
   <h1>📦 Список заказов</h1>
-  <div id="orders"></div>
+  <div id="orders">Загрузка заказов...</div>
 
   <script>
-    fetch('/orders.json')
-      .then(res => {
-        if (!res.ok) throw new Error("Файл не найден или ошибка сервера");
-        return res.json();
-      })
-      .then(data => {
+    async function loadOrders() {
+      try {
+        const res = await fetch('/orders.json');
+        const contentType = res.headers.get('content-type') || '';
+
+        if (!res.ok || contentType.includes('text/html')) {
+          throw new Error('Файл не найден или ошибка сервера');
+        }
+
+        const data = await res.json();
         const container = document.getElementById('orders');
-        if (data.length === 0) {
+
+        if (!Array.isArray(data) || data.length === 0) {
           container.innerHTML = '<p>Нет заказов.</p>';
           return;
         }
 
+        container.innerHTML = '';
+
         data.forEach((entry, index) => {
           const order = entry.order;
-          const div = document.createElement('div');
-          div.className = 'order';
-          div.innerHTML = `
+          const orderDiv = document.createElement('div');
+          orderDiv.className = 'order';
+          orderDiv.innerHTML = `
             <h3>Заказ #${index + 1} — ${entry.user}</h3>
             <ul>
               ${order.items.map(item => `
@@ -72,14 +95,41 @@
             </ul>
             <div class="total">💰 Общая сумма: ${order.total} сомонӣ</div>
             ${order.comment ? `<div class="comment">💬 Комментарий: ${order.comment}</div>` : ''}
+            <button class="delete-btn" onclick="deleteOrder(${index})">Удалить</button>
           `;
-          container.appendChild(div);
+          container.appendChild(orderDiv);
         });
-      })
-      .catch(err => {
-        document.getElementById('orders').innerHTML = '<p>Ошибка загрузки заказов.</p>';
-        console.error(err);
-      });
+      } catch (error) {
+        const container = document.getElementById('orders');
+        container.innerHTML = '<p>Ошибка загрузки заказов. Проверьте, что файл <code>orders.json</code> доступен и содержит корректный JSON.</p>';
+        console.error('Ошибка при загрузке orders.json:', error);
+      }
+    }
+
+    async function deleteOrder(index) {
+      if (!confirm('Удалить этот заказ?')) return;
+
+      try {
+        const res = await fetch('/delete_order', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({index})
+        });
+        const result = await res.json();
+
+        if (result.status === 'success') {
+          alert('Заказ удалён');
+          loadOrders(); // обновляем список после удаления
+        } else {
+          alert('Ошибка: ' + result.message);
+        }
+      } catch (error) {
+        alert('Ошибка при удалении заказа');
+        console.error(error);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadOrders);
   </script>
 </body>
 </html>
