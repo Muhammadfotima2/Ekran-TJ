@@ -5,8 +5,8 @@ from threading import Thread
 import json
 import os
 
-TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'
-ADMIN_CHAT_ID = 6172156061  # Твой Telegram ID
+TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой новый токен
+ADMIN_CHAT_ID = 6172156061
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
