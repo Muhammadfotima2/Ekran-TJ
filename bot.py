@@ -74,7 +74,6 @@ def delete_order():
         return jsonify({'status': 'success'})
     return jsonify({'status': 'error', 'message': 'Invalid index'}), 400
 
-# ✅ Новый маршрут для приёма заказов из мобильного приложения
 @app.route('/send-order', methods=['POST'])
 def send_order_from_mobile():
     data = request.get_json()
@@ -97,14 +96,18 @@ def send_order_from_mobile():
     })
     write_orders(orders)
 
-    msg = f"📥 Новый заказ из приложения!
-👤 Клиент: {name}
-💬 Комментарий: {comment}
-📦 Заказ:"
+    lines = [
+        "📥 Новый заказ из приложения!",
+        f"👤 Клиент: {name}",
+        f"💬 Комментарий: {comment if comment else '—'}",
+        "📦 Заказ:"
+    ]
     for item in items:
-        msg += f"\n• {item['model']} — {item['qty']} × {item['price']} = {item['qty'] * item['price']} сом"
+        lines.append(f"• {item['model']} — {item['qty']} × {item['price']} = {item['qty'] * item['price']} сом")
 
-    msg += f"\n💰 Общая сумма: {total} сомони"
+    lines.append(f"💰 Общая сумма: {total} сомони")
+    msg = "\n".join(lines)
+
     bot.send_message(ADMIN_CHAT_ID, msg)
 
     return jsonify({'status': 'ok'})
