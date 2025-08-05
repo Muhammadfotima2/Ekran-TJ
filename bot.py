@@ -10,7 +10,8 @@ ADMIN_CHAT_ID = 6172156061
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
 
-ORDERS_FILE = 'orders.json'
+# Путь к orders.json внутри папки public
+ORDERS_FILE = os.path.join('public', 'orders.json')
 
 def read_orders():
     if not os.path.exists(ORDERS_FILE):
