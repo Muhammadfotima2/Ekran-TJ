@@ -4,7 +4,7 @@ from flask import Flask, request, send_from_directory
 import os
 import json
 
-# 🔐 Токен и ID администратора
+# 🔐 Актуальный токен и ID администратора
 TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'
 ADMIN_CHAT_ID = 6172156061
 
@@ -12,11 +12,11 @@ ADMIN_CHAT_ID = 6172156061
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ORDERS_FILE = os.path.join(BASE_DIR, 'orders.json')
 
-# 📦 Инициализация бота и Flask-приложения
+# 📦 Инициализация бота и Flask
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
 
-# 📄 Чтение/запись заказов
+# 📄 Чтение заказов
 def read_orders():
     try:
         if not os.path.exists(ORDERS_FILE):
@@ -27,14 +27,16 @@ def read_orders():
         print(f"❌ Ошибка чтения orders.json: {e}")
         return []
 
+# 💾 Запись заказов
 def write_orders(orders):
     try:
         with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
             json.dump(orders, f, indent=2, ensure_ascii=False)
+        print("✅ Заказ успешно сохранён в файл.")
     except Exception as e:
         print(f"❌ Ошибка записи в orders.json: {e}")
 
-# 📩 Webhook для Telegram
+# 📩 Обработка Telegram Webhook
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
     json_string = request.get_data().decode('utf-8')
@@ -42,22 +44,22 @@ def webhook():
     bot.process_new_updates([update])
     return '', 200
 
-# 🌐 Главная страница проверки
+# 🌐 Главная страница
 @app.route('/')
 def index():
-    return 'Бот запущен!'
+    return 'Бот запущен.'
 
-# 🌐 Каталог
+# 🌐 Каталог WebApp
 @app.route('/catalog.html')
 def catalog():
     return send_from_directory('public', 'catalog.html')
 
-# 🌐 Отдача всех файлов из /public
+# 🌐 Статические файлы (изображения, скрипты)
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('public', filename)
 
-# 🛠️ Админ-панель заказов
+# 🛠️ Просмотр заказов (админка)
 @app.route('/admin/orders')
 def admin_orders():
     orders = read_orders()
@@ -72,7 +74,7 @@ def admin_orders():
             html += '</div>'
     return html
 
-# ▶️ /start: кнопка Каталог
+# ▶️ Обработка команды /start
 @bot.message_handler(commands=['start'])
 def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -83,7 +85,7 @@ def start_handler(message):
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
 
-# 🛒 Приём заказа из WebApp
+# 🛒 Получение заказа из WebApp
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
     print("📩 Получены данные из WebApp:", message.web_app_data.data)
@@ -100,9 +102,11 @@ def handle_web_app_data(message):
         "user": user_name,
         "order": order_text
     })
+    print("📝 Сохраняем заказ в:", ORDERS_FILE)
+    print("📦 Заказ:", json.dumps(orders[-1], indent=2, ensure_ascii=False))
     write_orders(orders)
 
-# 🚀 Запуск
+# 🚀 Запуск Flask и установка Webhook
 if __name__ == '__main__':
     bot.remove_webhook()
     bot.set_webhook(url=f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}')
