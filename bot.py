@@ -13,10 +13,13 @@ ADMIN_CHAT_ID = 6172156061
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
 
-# 📁 Инициализация базы данных
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'orders.db')
+# 📁 Путь к базе данных
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'orders.db')
 
+# 🔧 Создание таблицы заказов
 def init_db():
+    print("🧱 Инициализация базы:", DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -33,14 +36,16 @@ init_db()
 
 # 💾 Сохранение заказа
 def save_order(user, order_data):
+    print("💾 Сохраняем заказ в базу:", DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('INSERT INTO orders (user, order_data) VALUES (?, ?)', (user, order_data))
     conn.commit()
     conn.close()
 
-# 📥 Получение заказов
+# 📥 Получение всех заказов
 def get_all_orders():
+    print("📂 Читаем базу заказов из:", DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT id, user, order_data FROM orders ORDER BY id DESC')
@@ -48,7 +53,7 @@ def get_all_orders():
     conn.close()
     return results
 
-# 📩 Webhook от Telegram
+# 📩 Webhook
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
     json_string = request.get_data().decode('utf-8')
@@ -66,12 +71,12 @@ def index():
 def catalog():
     return send_from_directory('public', 'catalog.html')
 
-# 🌐 Статика (image, js, css)
+# 🌐 Статика (img/js)
 @app.route('/<path:filename>')
 def serve_static(filename):
     return send_from_directory('public', filename)
 
-# 🛠️ Просмотр заказов
+# 🛠️ Админка
 @app.route('/admin/orders')
 def admin_orders():
     orders = get_all_orders()
@@ -98,7 +103,7 @@ def start_handler(message):
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
 
-# 🛒 Обработка заказа
+# 🛒 Приём заказа
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
     print("📩 Получены данные из WebApp:", message.web_app_data.data)
@@ -109,10 +114,9 @@ def handle_web_app_data(message):
     msg = f"📦 Новый заказ от: {user_name}\n\n{order_text}"
     bot.send_message(ADMIN_CHAT_ID, msg)
     bot.send_message(message.chat.id, "✅ Ваш заказ получен! Спасибо.")
-
     save_order(user_name, order_text)
 
-# 🚀 Запуск Flask + Webhook
+# 🚀 Запуск
 if __name__ == '__main__':
     bot.remove_webhook()
     bot.set_webhook(url=f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}')
