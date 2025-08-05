@@ -1,5 +1,5 @@
 import telebot
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 import os
 
 TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'
@@ -15,6 +15,14 @@ def webhook():
     update = telebot.types.Update.de_json(json_string)
     bot.process_new_updates([update])
     return '', 200
+
+@app.route('/catalog.html')
+def catalog():
+    return send_from_directory('public', 'catalog.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('public', path)
 
 @app.route('/')
 def index():
