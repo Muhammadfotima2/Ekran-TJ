@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Список заказов</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .order {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .order h3 {
+      margin-top: 0;
+      color: #0077cc;
+    }
+    .order ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .order li {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .order li:last-child {
+      border-bottom: none;
+    }
+    .total, .comment {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>📦 Список заказов</h1>
+  <div id="orders"></div>
+
+  <script>
+    fetch('/orders.json')
+      .then(res => {
+        if (!res.ok) throw new Error("Файл не найден или ошибка сервера");
+        return res.json();
+      })
+      .then(data => {
+        const container = document.getElementById('orders');
+        if (data.length === 0) {
+          container.innerHTML = '<p>Нет заказов.</p>';
+          return;
+        }
+
+        data.forEach((entry, index) => {
+          const order = entry.order;
+          const div = document.createElement('div');
+          div.className = 'order';
+          div.innerHTML = `
+            <h3>Заказ #${index + 1} — ${entry.user}</h3>
+            <ul>
+              ${order.items.map(item => `
+                <li>📱 <strong>${item.model}</strong> — ${item.quality}, ${item.brand}, ${item.qty} шт. — ${item.price} сомонӣ</li>
+              `).join('')}
+            </ul>
+            <div class="total">💰 Общая сумма: ${order.total} сомонӣ</div>
+            ${order.comment ? `<div class="comment">💬 Комментарий: ${order.comment}</div>` : ''}
+          `;
+          container.appendChild(div);
+        });
+      })
+      .catch(err => {
+        document.getElementById('orders').innerHTML = '<p>Ошибка загрузки заказов.</p>';
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
