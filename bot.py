@@ -2,12 +2,25 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from flask import Flask, request, send_from_directory
 import os
+import json
 
 TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой токен
 ADMIN_CHAT_ID = 6172156061  # Твой ID Telegram
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
+
+ORDERS_FILE = 'orders.json'  # файл для хранения заказов
+
+def read_orders():
+    if not os.path.exists(ORDERS_FILE):
+        return []
+    with open(ORDERS_FILE, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+def write_orders(orders):
+    with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(orders, f, indent=2, ensure_ascii=False)
 
 # Webhook для Telegram
 @app.route('/' + TOKEN, methods=['POST'])
@@ -27,6 +40,21 @@ def index():
 def catalog():
     return send_from_directory('public', 'catalog.html')
 
+# Админская страница заказов
+@app.route('/admin/orders')
+def admin_orders():
+    orders = read_orders()
+    html = '<h2>Список заказов</h2>'
+    if not orders:
+        html += '<p>Заказов пока нет.</p>'
+    else:
+        for i, order in enumerate(orders, 1):
+            html += f'<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">'
+            html += f'<strong>Заказ #{i}</strong><br>'
+            html += f'<pre>{json.dumps(order, ensure_ascii=False, indent=2)}</pre>'
+            html += '</div>'
+    return html
+
 # Обработка команды /start
 @bot.message_handler(commands=['start'])
 def start_handler(message):
@@ -45,11 +73,26 @@ def handle_web_app_data(message):
     user = message.from_user
     user_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Клиент"
     msg = f"Новый заказ от: {user_name}\n\n{order_text}"
+
+    # Отправляем администратору сообщение с заказом
     bot.send_message(ADMIN_CHAT_ID, msg)
     bot.send_message(message.chat.id, "Ваш заказ получен! Спасибо.")
 
+    # Сохраняем заказ в файл
+    try:
+        orders = read_orders()
+    except Exception:
+        orders = []
+    orders.append({
+        "user": user_name,
+        "order": order_text
+    })
+    try:
+        write_orders(orders)
+    except Exception as e:
+        print(f"Ошибка при сохранении заказа: {e}")
+
 if __name__ == '__main__':
-    # Удаляем старый webhook и ставим новый
     bot.remove_webhook()
     bot.set_webhook(url=f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}')
     port = int(os.environ.get('PORT', 8080))
