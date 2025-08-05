@@ -74,6 +74,41 @@ def delete_order():
         return jsonify({'status': 'success'})
     return jsonify({'status': 'error', 'message': 'Invalid index'}), 400
 
+# ✅ Новый маршрут для приёма заказов из мобильного приложения
+@app.route('/send-order', methods=['POST'])
+def send_order_from_mobile():
+    data = request.get_json()
+    if not data:
+        return jsonify({'status': 'error', 'message': 'Нет данных'}), 400
+
+    name = data.get("name", "Клиент")
+    comment = data.get("comment", "")
+    items = data.get("items", [])
+    total = data.get("total", 0)
+
+    orders = read_orders()
+    orders.append({
+        "user": name,
+        "order": {
+            "items": items,
+            "total": total,
+            "comment": comment
+        }
+    })
+    write_orders(orders)
+
+    msg = f"📥 Новый заказ из приложения!
+👤 Клиент: {name}
+💬 Комментарий: {comment}
+📦 Заказ:"
+    for item in items:
+        msg += f"\n• {item['model']} — {item['qty']} × {item['price']} = {item['qty'] * item['price']} сом"
+
+    msg += f"\n💰 Общая сумма: {total} сомони"
+    bot.send_message(ADMIN_CHAT_ID, msg)
+
+    return jsonify({'status': 'ok'})
+
 @bot.message_handler(commands=['start'])
 def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -103,7 +138,6 @@ def handle_web_app_data(message):
             "order": data
         })
         write_orders(orders)
-
     except Exception as e:
         print(f"❌ Ошибка при разборе заказа: {e}")
 
