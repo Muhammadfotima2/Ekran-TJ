@@ -69,7 +69,7 @@ def start_handler(message):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     catalog_btn = KeyboardButton(
         "📦 Каталог",
-        web_app=WebAppInfo(url="https://ekran-tj-production.up.railway.app/catalog.html")
+        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
     )
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
