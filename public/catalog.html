@@ -3380,17 +3380,30 @@
     showSummary();
   }
 
-  // Подтверждение заказа
-  function confirmOrder() {
-    if (orders.length === 0) {
-      showToast("❗ Добавьте хотя бы один товар");
-      return;
-    }
-    showToast("✅ Заказ подтверждён");
-    orders = [];
-    document.querySelector(".comment").value = "";
-    hideSummary();
+  // Подтверждение заказа и отправка в Telegram
+function confirmOrder() {
+  if (orders.length === 0) {
+    showToast("❗ Добавьте хотя бы один товар");
+    return;
   }
+
+  const comment = document.querySelector(".comment").value;
+
+  const finalOrder = {
+    items: orders,
+    total: orders.reduce((sum, item) => sum + item.price * item.qty, 0),
+    comment: comment
+  };
+
+  // 🟢 Отправляем заказ в Telegram-бота
+  Telegram.WebApp.sendData(JSON.stringify(finalOrder));
+
+  showToast("✅ Заказ подтверждён");
+  orders = [];
+  document.querySelector(".comment").value = "";
+  hideSummary();
+}
+
 
   // Вешаем обработчики на все кнопки "🛒 Заказать"
   window.onload = function() {
