@@ -1,107 +1,135 @@
-import telebot
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
-from flask import Flask, request, send_from_directory
-import os
-import json
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Список заказов</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .order {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .order h3 {
+      margin-top: 0;
+      color: #0077cc;
+    }
+    .order ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .order li {
+      padding: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .order li:last-child {
+      border-bottom: none;
+    }
+    .total, .comment {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <h1>📦 Список заказов</h1>
+  <div id="orders">Загрузка заказов...</div>
 
-TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'
-ADMIN_CHAT_ID = 6172156061
+  <script>
+    async function loadOrders() {
+      try {
+        const res = await fetch('/orders.json');
+        const contentType = res.headers.get('content-type') || '';
 
-bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__, static_folder='public')
+        if (!res.ok || contentType.includes('text/html')) {
+          throw new Error('Файл не найден или ошибка сервера');
+        }
 
-ORDERS_FILE = os.path.join('public', 'orders.json')
+        const data = await res.json();
+        const container = document.getElementById('orders');
 
-def read_orders():
-    if not os.path.exists(ORDERS_FILE):
-        return []
-    with open(ORDERS_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        if (!Array.isArray(data) || data.length === 0) {
+          container.innerHTML = '<p>Нет заказов.</p>';
+          return;
+        }
 
-def write_orders(orders):
-    with open(ORDERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(orders, f, indent=2, ensure_ascii=False)
+        container.innerHTML = '';
 
-@app.route('/' + TOKEN, methods=['POST'])
-def webhook():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return '', 200
+        data.forEach((entry, index) => {
+          const order = entry.order;
+          const orderDiv = document.createElement('div');
+          orderDiv.className = 'order';
+          orderDiv.innerHTML = `
+            <h3>Заказ #${index + 1} — ${entry.user}</h3>
+            <ul>
+              ${order.items.map(item => `
+                <li>📱 <strong>${item.model}</strong> — ${item.quality}, ${item.brand}, ${item.qty} шт. — ${item.price} сомонӣ</li>
+              `).join('')}
+            </ul>
+            <div class="total">💰 Общая сумма: ${order.total} сомонӣ</div>
+            ${order.comment ? `<div class="comment">💬 Комментарий: ${order.comment}</div>` : ''}
+            <button class="delete-btn" onclick="deleteOrder(${index})">Удалить</button>
+          `;
+          container.appendChild(orderDiv);
+        });
+      } catch (error) {
+        const container = document.getElementById('orders');
+        container.innerHTML = '<p>Ошибка загрузки заказов. Проверьте, что файл <code>orders.json</code> доступен и содержит корректный JSON.</p>';
+        console.error('Ошибка при загрузке orders.json:', error);
+      }
+    }
 
-@app.route('/')
-def index():
-    return 'Бот запущен!'
+    async function deleteOrder(index) {
+      if (!confirm('Удалить этот заказ?')) return;
 
-@app.route('/catalog.html')
-def catalog():
-    return send_from_directory('public', 'catalog.html')
+      try {
+        const res = await fetch('/delete_order', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({index})
+        });
+        const result = await res.json();
 
-@app.route('/orders.html')
-def orders_page():
-    return send_from_directory('public', 'orders.html')
+        if (result.status === 'success') {
+          alert('Заказ удалён');
+          loadOrders(); // обновляем список после удаления
+        } else {
+          alert('Ошибка: ' + result.message);
+        }
+      } catch (error) {
+        alert('Ошибка при удалении заказа');
+        console.error(error);
+      }
+    }
 
-@app.route('/orders.json')
-def orders_json():
-    return send_from_directory('public', 'orders.json')
-
-@app.route('/image/<path:filename>')
-def images(filename):
-    return send_from_directory('public/image', filename)
-
-@app.route('/admin/orders')
-def admin_orders():
-    orders = read_orders()
-    html = '<h2>Список заказов</h2>'
-    if not orders:
-        html += '<p>Заказов пока нет.</p>'
-    else:
-        for i, order in enumerate(orders, 1):
-            html += f'<div style="border:1px solid #ccc; padding:10px; margin-bottom:10px;">'
-            html += f'<strong>Заказ #{i}</strong><br>'
-            html += f'<pre>{json.dumps(order, ensure_ascii=False, indent=2)}</pre>'
-            html += '</div>'
-    return html
-
-@bot.message_handler(commands=['start'])
-def start_handler(message):
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-
-    catalog_btn = KeyboardButton(
-        "📦 Каталог",
-        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
-    )
-    orders_btn = KeyboardButton(
-        "🧾 Заказы",
-        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/orders.html")
-    )
-
-    markup.add(catalog_btn, orders_btn)
-    bot.send_message(message.chat.id, "Добро пожаловать! Выберите действие:", reply_markup=markup)
-
-@bot.message_handler(content_types=['web_app_data'])
-def handle_web_app_data(message):
-    user = message.from_user
-    user_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or "Клиент"
-
-    try:
-        data = json.loads(message.web_app_data.data)
-        orders = read_orders()
-        orders.append({
-            "user": user_name,
-            "order": data
-        })
-        write_orders(orders)
-
-    except Exception as e:
-        print(f"❌ Ошибка при разборе заказа: {e}")
-
-    bot.send_message(ADMIN_CHAT_ID, "📢 Новый заказ! Проверьте список заказов в панели.")
-    # Клиенту НЕ отправляем подтверждение
-    # bot.send_message(message.chat.id, "✅ Ваш заказ получен! Спасибо.")
-
-if __name__ == '__main__':
-    bot.remove_webhook()
-    bot.set_webhook(url=f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}')
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    window.addEventListener('DOMContentLoaded', loadOrders);
+  </script>
+</body>
+</html>
