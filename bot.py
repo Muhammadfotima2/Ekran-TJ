@@ -2,7 +2,7 @@ import telebot
 from flask import Flask, request
 import os
 
-TOKEN = '7861896848:AAHJk1QcelFZ1owB0LO4XXNFflBz-WDZBIE'
+TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'
 ADMIN_CHAT_ID = 6172156061
 WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'
 
