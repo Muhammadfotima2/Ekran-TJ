@@ -1,37 +1,44 @@
 import telebot
-from flask import Flask, request
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+from flask import Flask, request, send_from_directory
 import os
 
 TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой токен
-ADMIN_CHAT_ID = 6172156061  # Твой ID в Telegram
-
-# Адрес твоего Webhook (замени на свой домен)
-WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'
+ADMIN_CHAT_ID = 6172156061  # Твой ID Telegram
 
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
 
-@app.route(f'/{TOKEN}', methods=['POST'])
+# Webhook для Telegram
+@app.route('/' + TOKEN, methods=['POST'])
 def webhook():
     json_string = request.get_data().decode('utf-8')
     update = telebot.types.Update.de_json(json_string)
     bot.process_new_updates([update])
     return '', 200
 
+# Главная страница бота (проверка работы)
 @app.route('/')
 def index():
-    return "Бот запущен!"
+    return 'Бот запущен!'
 
+# Маршрут для каталога (файл catalog.html в папке public)
+@app.route('/catalog.html')
+def catalog():
+    return send_from_directory('public', 'catalog.html')
+
+# Обработка команды /start
 @bot.message_handler(commands=['start'])
 def start_handler(message):
-    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    catalog_btn = telebot.types.KeyboardButton(
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    catalog_btn = KeyboardButton(
         "📦 Каталог",
-        web_app=telebot.types.WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
+        web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
     )
     markup.add(catalog_btn)
     bot.send_message(message.chat.id, "Добро пожаловать! Нажмите кнопку ниже:", reply_markup=markup)
 
+# Обработка данных из WebApp (заказы)
 @bot.message_handler(content_types=['web_app_data'])
 def handle_web_app_data(message):
     order_text = message.web_app_data.data
@@ -42,7 +49,8 @@ def handle_web_app_data(message):
     bot.send_message(message.chat.id, "Ваш заказ получен! Спасибо.")
 
 if __name__ == '__main__':
-    bot.remove_webhook()  # Обязательно удаляем старый webhook
-    bot.set_webhook(url=WEBHOOK_URL)  # Устанавливаем новый webhook
+    # Удаляем старый webhook и ставим новый
+    bot.remove_webhook()
+    bot.set_webhook(url=f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}')
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port)
