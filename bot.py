@@ -1,13 +1,23 @@
 import telebot
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 import os
 
-TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # твой токен бота
+TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'
 ADMIN_CHAT_ID = 6172156061
-WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'  # замени на свой адрес
+WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'
 
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
+
+# Отдаём каталог по корню
+@app.route('/')
+def index():
+    return 'Бот запущен!'
+
+# Отдаём файлы из папки public
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('public', path)
 
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
@@ -15,10 +25,6 @@ def webhook():
     update = telebot.types.Update.de_json(json_string)
     bot.process_new_updates([update])
     return '', 200
-
-@app.route('/')
-def index():
-    return 'Бот запущен!'
 
 @bot.message_handler(commands=['start'])
 def start_handler(message):
