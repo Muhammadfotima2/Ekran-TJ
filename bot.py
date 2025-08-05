@@ -10,7 +10,6 @@ ADMIN_CHAT_ID = 6172156061
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__, static_folder='public')
 
-# Путь к orders.json внутри папки public
 ORDERS_FILE = os.path.join('public', 'orders.json')
 
 def read_orders():
@@ -87,22 +86,6 @@ def handle_web_app_data(message):
 
     try:
         data = json.loads(message.web_app_data.data)
-        items = data.get("items", [])
-        comment = data.get("comment", "")
-        total = data.get("total", 0)
-
-        lines = [f"📦 Новый заказ от: {user_name}", ""]
-        for item in items:
-            lines.append(
-                f"• {item['model']} — {item['quality']} — {item['brand']} — {item['qty']} шт. — {item['price']} сомонӣ"
-            )
-        lines.append(f"💰 Общая сумма: {total} сомонӣ")
-        if comment:
-            lines.append(f"💬 Комментарий: {comment}")
-
-        msg = "\n".join(lines)
-
-        # Сохраняем в файл
         orders = read_orders()
         orders.append({
             "user": user_name,
@@ -111,10 +94,10 @@ def handle_web_app_data(message):
         write_orders(orders)
 
     except Exception as e:
-        msg = f"❌ Ошибка при разборе заказа: {e}"
-        print(msg)
+        print(f"❌ Ошибка при разборе заказа: {e}")
 
-    bot.send_message(ADMIN_CHAT_ID, msg)
+    # Отправляем короткое уведомление, без деталей
+    bot.send_message(ADMIN_CHAT_ID, "📢 Новый заказ! Проверьте список заказов в панели.")
     bot.send_message(message.chat.id, "✅ Ваш заказ получен! Спасибо.")
 
 if __name__ == '__main__':
