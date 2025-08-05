@@ -5,7 +5,7 @@ from threading import Thread
 import json
 import os
 
-TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой новый токен
+TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой токен
 ADMIN_CHAT_ID = 6172156061
 
 bot = telebot.TeleBot(TOKEN)
@@ -86,12 +86,17 @@ def handle_web_app_data(message):
 
     try:
         orders = read_json(ORDERS_FILE)
+        print(f"Текущий список заказов перед добавлением: {orders}")
     except Exception:
         orders = []
+        print("Файл orders.json не найден, создаём новый список заказов")
+
     orders.append({
         "user": user_name,
         "order": order_text
     })
+    print(f"Список заказов после добавления: {orders}")
+
     try:
         write_json(ORDERS_FILE, orders)
         print("Заказ успешно сохранён в файл.")
