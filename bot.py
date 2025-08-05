@@ -1,14 +1,14 @@
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
-from flask import Flask, request
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+from flask import Flask, request, send_from_directory
 import os
 
-TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Ваш токен бота
+TOKEN = '8307281840:AAFUJ21F9-Ql7HPWkUXl8RhNonwRNTPYyJk'  # Твой токен
 ADMIN_CHAT_ID = 6172156061
 WEBHOOK_URL = f'https://ekran-tj-hofiz.up.railway.app/{TOKEN}'
 
 bot = telebot.TeleBot(TOKEN)
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
 
 @app.route('/' + TOKEN, methods=['POST'])
 def webhook():
@@ -21,10 +21,15 @@ def webhook():
 def index():
     return 'Бот запущен!'
 
+# Добавляем маршрут для отдачи catalog.html
+@app.route('/catalog.html')
+def catalog():
+    return send_from_directory('public', 'catalog.html')
+
 @bot.message_handler(commands=['start'])
 def start_handler(message):
-    markup = InlineKeyboardMarkup()
-    catalog_btn = InlineKeyboardButton(
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    catalog_btn = KeyboardButton(
         "📦 Каталог",
         web_app=WebAppInfo(url="https://ekran-tj-hofiz.up.railway.app/catalog.html")
     )
